@@ -79,6 +79,21 @@ void loop()
    
   }
 
+  else if (req.indexOf("tds/") != -1)
+  {
+
+    String str = "HTTP/1.1 200 OK\r\nContent-Type: text/json\r\n\r\n{'TDS':";
+    String valorTDS = String(mideTDS(), 2);
+    String cierre = "}";
+
+    Serial.println(str+valorTDS+cierre);
+    client.print(str+valorTDS+cierre);
+    
+    delay(1);
+    Serial.println("Client disonnected");
+   
+  }
+
   else
   {
 
@@ -159,6 +174,55 @@ float midePH() {
 
 }
 
+//********************************************************************************************
+float mideTDS() {
+
+  float Voltage =0;
+  float tdsValue =0;
+  int16_t sensorValue = 0;
+  const float multiplier = 0.1875F;
+  float temperature  =25;
+
+  int16_t buf[20];                //buffer for read analog
+  for (int i = 0; i < 10; i++) //Get 10 sample value from the sensor for smooth the value
+  {
+    buf[i] = ads.readADC_SingleEnded(1) ;
+    delay(10);
+  }
+
+  for (int i = 0; i < 9; i++) //sort the analog from small to large
+  {
+    for (int j = i + 1; j < 10; j++)
+    {
+      if (buf[i] > buf[j])
+      {
+        int16_t temp = buf[i];
+        buf[i] = buf[j];
+        buf[j] = temp;
+      }
+    }
+  }
+
+  //for (int i = 0; i < 10; i++)
+  //  Serial.println(buf[i]);
+
+  avgValue = 0L;
+  for (int i = 2; i < 8; i++)               //take the average value of 6 center sample
+    avgValue += buf[i];
+
+    
+    sensorValue=ads.readADC_SingleEnded(1);
+    Voltage= sensorValue * multiplier;
+    Voltage=Voltage/1000;
+    float compensationCoefficient=1.0+0.02*(temperature-25.0); 
+    float compensationVoltage=Voltage/compensationCoefficient;
+    tdsValue=(133.42*compensationVoltage*compensationVoltage*compensationVoltage - 255.86*compensationVoltage*compensationVoltage + 857.39*compensationVoltage)*0.5;
+   // Serial.println(tdsValue);
+  
+  
+  return tdsValue;
+
+}
 
 //******************************************************************************************
 void wifiConnect()
