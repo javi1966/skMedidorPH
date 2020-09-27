@@ -10,7 +10,8 @@ Adafruit_ADS1115 ads;  /* Use this for the 16-bit version */
 
 
 #define DEBUG true
-const int LED = 13;
+const int LED =  13;
+const int RELE = 15;
 #define SensorPin 0            //pH meter Analog output to Arduino Analog Input 0
 #define Offset -1.75            //deviation compensate
 int32_t avgValue;              //Store the average value of the sensor feedback
@@ -23,9 +24,13 @@ WiFiServer server(80);
 //**********************************************************************************
 void setup()
 {
-  pinMode(13, OUTPUT);
+ 
+  pinMode(RELE, OUTPUT);
+  pinMode(LED, OUTPUT);
 
   Serial.begin(115200);
+
+  digitalWrite(RELE,true);
 
   ads.begin();
 
@@ -65,7 +70,10 @@ void loop()
   if (req.indexOf("ph/") != -1)
   {
 
+    digitalWrite(RELE,true);
 
+    delay(1000);
+    
     String str = "HTTP/1.1 200 OK\r\nContent-Type: text/json\r\n\r\n{'PH':";
     String valorPH = String(midePH(), 2);
     String cierre = "}";
@@ -81,7 +89,10 @@ void loop()
 
   else if (req.indexOf("tds/") != -1)
   {
+    digitalWrite(RELE,false);
 
+    delay(1000);
+    
     String str = "HTTP/1.1 200 OK\r\nContent-Type: text/json\r\n\r\n{'TDS':";
     String valorTDS = String(mideTDS(), 2);
     String cierre = "}";
@@ -127,8 +138,6 @@ void TimingISR()
   cntTemp = 0;
 
 }
-
-
 
 //*******************************************************************************************
 float midePH() {
