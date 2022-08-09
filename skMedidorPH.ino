@@ -32,6 +32,8 @@ void setup()
 
   digitalWrite(RELE,true);
 
+  ads.setGain(GAIN_TWOTHIRDS);
+
   ads.begin();
 
  
@@ -47,6 +49,11 @@ void setup()
 //*****************************************************************************
 void loop()
 {
+
+  mideTDS();
+  delay(1000);
+
+ /* 
 
   WiFiClient client = server.available();
 
@@ -65,12 +72,13 @@ void loop()
   Serial.print("\r\n");
   client.flush();
 
+  
 
 
   if (req.indexOf("ph/") != -1)
   {
 
-    digitalWrite(RELE,true);
+    digitalWrite(RELE,false);
 
     delay(1000);
     
@@ -89,7 +97,7 @@ void loop()
 
   else if (req.indexOf("tds/") != -1)
   {
-    digitalWrite(RELE,false);
+    digitalWrite(RELE,true);
 
     delay(1000);
     
@@ -113,7 +121,7 @@ void loop()
     return;
   }
 
-
+*/
 
 
  /*int16_t adc0, adc1, adc2, adc3;
@@ -142,8 +150,35 @@ void TimingISR()
 //*******************************************************************************************
 float midePH() {
 
+    float Voltage =0;
+    int16_t sensorValue = 0;
+    const float multiplier = 0.1875F;  //ADS1115 ,GAIN_TWOTHIRDS  6,144V  0,1875mV
+
+    sensorValue=ads.readADC_SingleEnded(0);
+    Serial.print("Valor sensor A1: ");
+    Serial.println(sensorValue);
+    Voltage= sensorValue * multiplier;
+    //Voltage=Voltage/1000;
+
+    Serial.print("Voltaje: ");
+    Serial.println(Voltage);
+
+
+
+
+
+
+
+
+
+
+
+
+
+    
+
   int16_t buf[20];                //buffer for read analog
-  for (int i = 0; i < 10; i++) //Get 10 sample value from the sensor for smooth the value
+  for (int i = 0; i < 19; i++) //Get 10 sample value from the sensor for smooth the value
   {
     buf[i] = ads.readADC_SingleEnded(0);
     delay(10);
@@ -166,9 +201,12 @@ float midePH() {
   //  Serial.println(buf[i]);
 
   avgValue = 0L;
-  for (int i = 2; i < 8; i++)               //take the average value of 6 center sample
+  for (int i = 0; i < 19; i++)               //take the average value of 6 center sample
     avgValue += buf[i];
-  // Serial.println(avgValue);
+    
+   Serial.print("Media: ");
+   Serial.println(avgValue/20);
+   
   // float phValue = (float)avgValue * 5.0 / 1024 / 6; //convert the analog into millivolt
   float phValue = (float)avgValue / 6.0 * 0.1875;
 
@@ -189,10 +227,10 @@ float mideTDS() {
   float Voltage =0;
   float tdsValue =0;
   int16_t sensorValue = 0;
-  const float multiplier = 0.1875F;
-  float temperature  =25;
+  const float multiplier = 0.1875F;  //ADS1115 ,GAIN_TWOTHIRDS  6,144V  0,1875mV
+  float temperature  = 25;
 
-  int16_t buf[20];                //buffer for read analog
+ /* int16_t buf[20];                //buffer for read analog
   for (int i = 0; i < 10; i++) //Get 10 sample value from the sensor for smooth the value
   {
     buf[i] = ads.readADC_SingleEnded(1) ;
@@ -218,11 +256,21 @@ float mideTDS() {
   avgValue = 0L;
   for (int i = 2; i < 8; i++)               //take the average value of 6 center sample
     avgValue += buf[i];
+  */
 
+    delay(1000);
     
-    sensorValue=ads.readADC_SingleEnded(1);
+    sensorValue=ads.readADC_SingleEnded(3);
+    Serial.print("Valor sensor A3: ");
+    Serial.println(sensorValue);
+    
     Voltage= sensorValue * multiplier;
     Voltage=Voltage/1000;
+
+    Serial.print("Voltaje: ");
+    Serial.println(Voltage);
+    
+     
     float compensationCoefficient=1.0+0.02*(temperature-25.0); 
     float compensationVoltage=Voltage/compensationCoefficient;
     tdsValue=(133.42*compensationVoltage*compensationVoltage*compensationVoltage - 255.86*compensationVoltage*compensationVoltage + 857.39*compensationVoltage)*0.5;
@@ -239,7 +287,7 @@ void wifiConnect()
 
   WiFi.mode(WIFI_STA);
 
-  Serial.print("Connecting to AP");
+  Serial.println("Connecting to AP");
   WiFi.begin(AP_SSID, AP_PASSWORD);
 
   WiFi.config(IPAddress(192, 168, 1, 252), IPAddress(192, 168, 1, 1), IPAddress(255, 255, 255, 0));
