@@ -75,9 +75,6 @@ void setup()
 void loop()
 {
 
-     
-
-
       WiFiClient client = server.available();
 
       if (!client) {
@@ -105,7 +102,7 @@ void loop()
 
        delay(1000);
 
-       String str = "HTTP/1.1 200 OK\r\nContent-Type: text/json\r\n\r\n{'PH':";
+       String str = "HTTP/1.1 200 OK\r\nContent-Type: text/json\r\n\r\n{\"PH\":";
        String valorPH = String(midePH(), 2);
        String cierre = "}";
 
@@ -124,12 +121,16 @@ void loop()
 
        delay(1000);
 
-       String str = "HTTP/1.1 200 OK\r\nContent-Type: text/json\r\n\r\n{'TDS':";
-       String valorTDS = String(mideTDS(), 2);
+       float valueTDS=mideTDS();
+
+       String str = "HTTP/1.1 200 OK\r\nContent-Type: text/json\r\n\r\n{\"ºd\":";
+       String valorD=String(valueTDS*0.0556,1);
+       String valorF=",\"ºf\":"+String(valueTDS*0.1,1);
+       String valorTDS =",\"TDS\":"+ String((int)valueTDS);
        String cierre = "}";
 
-       Serial.println(str+valorTDS+cierre);
-       client.print(str+valorTDS+cierre);
+       Serial.println(str+valorD+valorF+valorTDS+cierre);
+       client.print(str+valorD+valorF+valorTDS+cierre);
 
        delay(1);
        Serial.println("Client disonnected");
@@ -141,7 +142,7 @@ void loop()
 
        delay(1000);
 
-       String str = "HTTP/1.1 200 OK\r\nContent-Type: text/json\r\n\r\n{'TemperaturaTDS':";
+       String str = "HTTP/1.1 200 OK\r\nContent-Type: text/json\r\n\r\n{\"TemperaturaTDS\":";
        String valorTemperatura = String(mideTemperatura(), 2);
        String cierre = "}";
 
@@ -206,16 +207,20 @@ void loop()
   //*******************************************************************************************
   float midePH() {
 
+    //Sensor PH4502C
+
     float Voltage = 0.0;
     float phValue=0.0;
+    float calibration_value = 22.6;
       
     Voltage=mideADS115(CH_PH);
     Serial.print("Voltaje: ");
     Serial.println(Voltage);
     
 
-    //phValue = -5.70 * Voltage + 21.34;
-    phValue=7 - (2.5 - Voltage) * -3.8;
+    phValue = -5.70 * Voltage + calibration_value;
+   // phValue=7 + ((2.5 - Voltage) / 0.18);
+    //phValue= Voltage-3.5;
     Serial.print("pH:");
     Serial.print(phValue, 1);
     Serial.println(" ");
@@ -240,7 +245,7 @@ void loop()
 
     float compensationCoefficient = 1.0 + 0.02 * (temperature - 25.0);
     float compensationVoltage = Voltage / compensationCoefficient;
-    tdsValue = (133.42 * compensationVoltage * compensationVoltage * compensationVoltage - 255.86 * compensationVoltage * compensationVoltage + 857.39 * compensationVoltage) * 0.5;
+    tdsValue = (133.42 * pow(compensationVoltage,3) - 255.86 * compensationVoltage * compensationVoltage + 857.39 * compensationVoltage) * 0.5;
     Serial.println(tdsValue);
 
     return tdsValue;
@@ -255,7 +260,7 @@ void loop()
     
     for(int i=0;i<SCOUNT;i++){
       buf[i] = ads.readADC_SingleEnded(ch);    //read the analog value and store into the buffer
-      delay(10);
+      delay(40);
     }
 
     
